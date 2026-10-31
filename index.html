@@ -198,13 +198,11 @@
             <span id="cart-total" style="font-size:1.5rem; font-weight:900; color:#4f46e5;">0.00 €</span>
           </div>
 
-          <!-- POINT 5 : SUPPRESSION DE LA CASE CHÈQUE (2 COLONNES UNIQUEMENT) -->
           <div class="grid grid-cols-2 gap-1-5">
             <button type="button" onclick="setPaymentMethod('Espèces')" id="pay-Espèces" class="pay-btn active">💵 Espèces</button>
             <button type="button" onclick="setPaymentMethod('CB')" id="pay-CB" class="pay-btn">💳 CB</button>
           </div>
 
-          <!-- POINT 1 & 3 : CASE MONNAIE AGRANDIE + OUVERTURE PAVÉ FLOTTANT -->
           <div id="cash-box" class="p-3" style="background-color:#fffbeb; border:2px solid #fcd34d; border-radius:0.85rem; font-size:0.95rem;">
             <div class="flex justify-between items-center">
               <label style="font-weight:800; color:#78350f; font-size:1rem;">Reçu :</label>
@@ -231,7 +229,7 @@
       </div>
     </section>
 
-    <!-- PAVÉ NUMÉRIQUE FLOTTANT (POINT 3) -->
+    <!-- PAVÉ NUMÉRIQUE FLOTTANT -->
     <div id="floating-numpad" class="hidden no-print">
       <div class="flex justify-between items-center" style="margin-bottom:0.5rem; padding-bottom:0.25rem; border-bottom:1px solid #334155;">
         <span style="font-size:0.75rem; font-weight:700; color:#cbd5e1;">Montant reçu (€)</span>
@@ -355,6 +353,19 @@
     </div>
   </div>
 
+  <!-- MODAL CODE SECRET SUPPRESSION ARCHIVE (POINT 2 : CODE CACHÉ) -->
+  <div id="delete-pin-modal" class="fixed hidden" style="top:0; bottom:0; left:0; right:0; background:rgba(15,23,42,0.6); z-index:60; display:flex; align-items:center; justify-content:center; padding:1rem;">
+    <div class="card p-5 w-full flex flex-col gap-4" style="max-width:20rem; background:#fff;">
+      <h3 style="font-size:1rem; font-weight:800; color:#e11d48;">🔒 Code de sécurité</h3>
+      <p style="font-size:0.75rem; color:#64748b;">Entrez le code à 4 chiffres pour supprimer cette archive :</p>
+      <input type="password" id="delete-pin-input" maxlength="4" inputmode="numeric" placeholder="••••" onkeydown="if(event.key==='Enter') confirmDeleteArchive()" style="padding:0.5rem; border:2px solid #cbd5e1; border-radius:0.5rem; font-size:1.5rem; font-weight:900; text-align:center; letter-spacing:0.5rem; width:100%;">
+      <div class="flex justify-end gap-2" style="border-top:1px solid #f1f5f9; padding-top:0.75rem;">
+        <button onclick="closeDeletePinModal()" style="padding:0.5rem 1rem; font-size:0.75rem; font-weight:700; color:#64748b;">Annuler</button>
+        <button onclick="confirmDeleteArchive()" class="btn-rose px-4 py-2" style="font-size:0.75rem;">Supprimer</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const defaultProducts = [
       { id: 1, name: "Crêpe Sucrée", price: 2.00, category: "Restauration", color: "amber" },
@@ -379,6 +390,7 @@
 
     let cart = {}, selectedPayment = 'Espèces', currentCategory = 'all';
     let draggedItemIndex = null;
+    let pendingDeleteArchiveId = null;
 
     window.onload = function() { 
       renderPOS(); 
@@ -389,7 +401,7 @@
       document.getElementById('archive-eventDate').value = new Date().toISOString().slice(0, 10);
     };
 
-    /* --- GESTION DU PAVÉ NUMÉRIQUE FLOTTANT (POINT 3) --- */
+    /* --- GESTION DU PAVÉ NUMÉRIQUE FLOTTANT --- */
     function openNumpad() {
       document.getElementById('floating-numpad').classList.remove('hidden');
     }
@@ -597,24 +609,26 @@
       }
     }
 
-    // --- POINT 2 : IMPRESSION SILENCIEUSE SANS BOÎTE DE DIALOGUE RAWBT ---
+    // --- POINT 1 & 3 : PAS DE DOUBLE COUPE (SUPPRESSION DES 2 TICKETS VIDES EN TROP) ---
     const ESC_INIT = "\x1B\x40";
     const ESC_CUT = "\n\n\x1D\x56\x42\x00";
 
     function sendToRawBT(rawCommands) {
-      const fullPayload = ESC_INIT + rawCommands + ESC_CUT;
+      // On n'ajoute PLUS ESC_CUT ici à la fin, car chaque ticket/coupon contient déjà sa propre coupe !
+      const fullPayload = ESC_INIT + rawCommands;
       const bytes = new TextEncoder().encode(fullPayload);
 
-      // Tentative 1 : Envoi 100% silencieux via le serveur WebSocket local de RawBT (aucune boîte de dialogue)
+      let printedViaWs = false;
       try {
-        const ws = new WebSocket("ws://localhost:40213/");
+        const ws = new WebSocket("ws://127.0.0.1:40213/");
         ws.binaryType = "arraybuffer";
         ws.onopen = function() {
+          printedViaWs = true;
           ws.send(bytes.buffer);
           setTimeout(() => ws.close(), 300);
         };
         ws.onerror = function() {
-          fallbackUriRawBT(bytes);
+          if (!printedViaWs) fallbackUriRawBT(bytes);
         };
       } catch (e) {
         fallbackUriRawBT(bytes);
@@ -627,13 +641,11 @@
         binary += String.fromCharCode(bytes[i]);
       }
       const base64Data = window.btoa(binary);
-      const iframe = document.createElement('iframe');
-      iframe.style.display = 'none';
-      iframe.src = "rawbt:base64," + base64Data;
-      document.body.appendChild(iframe);
-      setTimeout(() => {
-        if (document.body.contains(iframe)) document.body.removeChild(iframe);
-      }, 2000);
+      const link = document.createElement('a');
+      link.href = "rawbt:base64," + base64Data;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
 
     function printSaleReceipt(sale, mode) {
@@ -662,7 +674,7 @@
         textRaw += `Paiement : ${sale.paymentMethod.normalize("NFD").replace(/[\u0300-\u036f]/g, "")}\n`;
         textRaw += "================================\n";
         textRaw += "      Merci de votre visite!    \n";
-        textRaw += ESC_CUT;
+        textRaw += ESC_CUT; // 1 seule coupe pour le ticket récap
       }
 
       if (mode === 'coupons' || mode === 'both') {
@@ -675,11 +687,9 @@
             textRaw += `       >> ${cleanName} <<       \n`;
             textRaw += `    ${dateStr} - ${timeStr}     \n`;
             textRaw += "--------------------------------\n";
-            textRaw += ESC_CUT;
+            textRaw += ESC_CUT; // 1 seule coupe après chaque coupon
           }
         });
-      } else if (mode === 'global') {
-        textRaw += ESC_CUT;
       }
 
       finishCheckout();
@@ -795,6 +805,7 @@
       textRaw += `Total articles : ${totalQty}\n`;
       textRaw += `Transactions : ${sales.length}\n`;
       textRaw += "================================\n";
+      textRaw += ESC_CUT;
 
       sendToRawBT(textRaw);
     }
@@ -842,16 +853,30 @@
       alert('Session archivée et caisse réinitialisée avec succès !');
     }
 
-    /* --- POINT 4 : SUPPRESSION D'UNE ARCHIVE AVEC CODE 2709 --- */
+    /* --- POINT 2 : SUPPRESSION D'ARCHIVE AVEC CODE CACHÉ (••••) --- */
     function deleteArchive(id) {
-      const code = prompt("Entrez le code à 4 chiffres pour supprimer cette archive :");
-      if (code === null) return;
+      pendingDeleteArchiveId = id;
+      const pinInput = document.getElementById('delete-pin-input');
+      pinInput.value = '';
+      document.getElementById('delete-pin-modal').classList.remove('hidden');
+      setTimeout(() => pinInput.focus(), 100);
+    }
+
+    function closeDeletePinModal() {
+      pendingDeleteArchiveId = null;
+      document.getElementById('delete-pin-modal').classList.add('hidden');
+    }
+
+    function confirmDeleteArchive() {
+      const code = document.getElementById('delete-pin-input').value;
       if (code === "2709") {
-        archives = archives.filter(a => a.id !== id);
+        archives = archives.filter(a => a.id !== pendingDeleteArchiveId);
         localStorage.setItem('ape_archives', JSON.stringify(archives));
+        closeDeletePinModal();
         renderArchives();
       } else {
         alert("Code incorrect ! Suppression annulée.");
+        closeDeletePinModal();
       }
     }
 
