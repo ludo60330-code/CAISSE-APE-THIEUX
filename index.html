@@ -947,9 +947,16 @@
         });
       });
 
-      let textRaw = getCenteredHeader("BILAN DE SESSION");
-      textRaw += ESC_ALIGN_CENTER + `      ${new Date().toLocaleDateString('fr-FR')}      \n`;
-      textRaw += "--------------------------------\n";
+      let textRaw = ESC_ALIGN_CENTER;
+      textRaw += "================================\n";
+      textRaw += "          ASSOCIATION           \n";
+      textRaw += "             APET               \n";
+      textRaw += "   Parents d'eleves Theodosiens  \n";
+      textRaw += "================================\n";
+      textRaw += `     ${sessionTitle.toUpperCase()}     \n`;
+      textRaw += "        BILAN DE SESSION        \n";
+      textRaw += `      ${new Date().toLocaleDateString('fr-FR')}      \n`;
+      textRaw += "================================\n";
       textRaw += ESC_ALIGN_LEFT;
 
       Object.entries(itemStats).forEach(([name, data]) => {
