@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Caisse APE - Fêtes & Événements</title>
+  <title>APET - Caisse Fêtes & Événements</title>
   <style>
     /* Reset & Base Local Styles */
     *, ::before, ::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -139,10 +139,10 @@
   <header class="no-print">
     <div class="max-w-7xl p-3 flex justify-between items-center">
       <div class="flex items-center gap-2">
-        <span style="font-size:1.5rem;">🏪</span>
+        <span style="font-size:1.5rem;">🌳</span>
         <div>
-          <h1 style="font-size:1.125rem; font-weight:800; line-height:1.2;">Caisse APE</h1>
-          <span style="font-size:0.65rem; color:#c7d2fe;">Association Parents</span>
+          <h1 style="font-size:1.125rem; font-weight:800; line-height:1.2;">APET Caisse</h1>
+          <span style="font-size:0.65rem; color:#c7d2fe;">Parents d'élèves des Théodosiens</span>
         </div>
       </div>
 
@@ -249,7 +249,7 @@
         <button type="button" onclick="numpadPress('.')" class="numpad-btn">.</button>
         <button type="button" onclick="numpadPress('C')" class="numpad-btn numpad-clear">C</button>
         <button type="button" onclick="numpadPress('BACK')" class="numpad-btn">⌫</button>
-        <button type="button" onclick="closeNumpad()" class="numpad-btn numpad-enter">Entrée ↵</button>
+        <button type="button" onclick="numpadPress('ENTER')" class="numpad-btn numpad-enter">Entrée ↵</button>
       </div>
     </div>
 
@@ -299,7 +299,21 @@
     <!-- Onglet Catalogue -->
     <section id="tab-catalog" class="hidden flex flex-col gap-3 overflow-y-auto">
       <div class="card p-4 flex flex-col gap-3">
-        <h2 style="font-size:1.125rem; font-weight:800;">Gestion du Catalogue</h2>
+        <!-- Option Logo Application -->
+        <div style="background:#f8fafc; padding:0.75rem; border-radius:0.75rem; border:1px solid #e2e8f0; display:flex; flex-direction:column; gap:0.5rem; margin-bottom:0.5rem;">
+          <h3 style="font-size:0.875rem; font-weight:800;">🖼 Logo de l'Association (Tickets & Appli)</h3>
+          <input type="file" id="logo-file-input" accept="image/*" onchange="handleLogoUpload(event)" style="font-size:0.75rem;">
+          <div id="logo-preview-container" class="flex items-center gap-2">
+            <span style="font-size:0.75rem; color:#64748b;">Logo actuel :</span>
+            <img id="logo-preview-img" src="" alt="Aucun logo" style="height:2rem; max-width:6rem; object-fit:contain; border:1px solid #cbd5e1; border-radius:0.25rem; background:#fff;">
+            <button onclick="removeLogo()" style="font-size:0.75rem; color:#dc2626; font-weight:700;">Supprimer</button>
+          </div>
+        </div>
+
+        <div class="flex justify-between items-center">
+          <h2 id="catalog-form-title" style="font-size:1.125rem; font-weight:800;">Gestion du Catalogue</h2>
+          <button id="cancel-edit-btn" onclick="resetProductForm()" class="hidden" style="font-size:0.75rem; color:#dc2626; font-weight:700;">✕ Annuler modification</button>
+        </div>
         <form onsubmit="handleProductSubmit(event)" class="flex flex-col gap-2" style="background:#f8fafc; padding:0.75rem; border-radius:0.75rem; border:1px solid #e2e8f0;">
           <input type="hidden" id="prod-id">
           <input type="text" id="prod-name" required placeholder="Nom article" style="padding:0.5rem; border:1px solid #cbd5e1; border-radius:0.375rem; font-size:0.875rem;">
@@ -317,8 +331,11 @@
             <option value="purple">🟪 Violet</option>
             <option value="rose">🟥 Rose / Rouge</option>
           </select>
-          <button type="submit" class="btn-indigo py-2">Enregistrer</button>
+          <button type="submit" id="prod-submit-btn" class="btn-indigo py-2">Enregistrer</button>
         </form>
+
+        <h3 style="font-size:0.875rem; font-weight:800; margin-top:0.5rem;">Liste des articles (Cliquez pour modifier)</h3>
+        <div id="catalog-list-container" class="flex flex-col gap-2"></div>
       </div>
     </section>
 
@@ -353,7 +370,7 @@
     </div>
   </div>
 
-  <!-- MODAL CODE SECRET SUPPRESSION ARCHIVE (POINT 2 : CODE CACHÉ) -->
+  <!-- MODAL CODE SECRET SUPPRESSION ARCHIVE -->
   <div id="delete-pin-modal" class="fixed hidden" style="top:0; bottom:0; left:0; right:0; background:rgba(15,23,42,0.6); z-index:60; display:flex; align-items:center; justify-content:center; padding:1rem;">
     <div class="card p-5 w-full flex flex-col gap-4" style="max-width:20rem; background:#fff;">
       <h3 style="font-size:1rem; font-weight:800; color:#e11d48;">🔒 Code de sécurité</h3>
@@ -387,6 +404,7 @@
     let sales = JSON.parse(localStorage.getItem('ape_sales')) || [];
     let archives = JSON.parse(localStorage.getItem('ape_archives')) || [];
     let sessionTitle = localStorage.getItem('ape_session_title') || "Ventes de la journée";
+    let customLogo = localStorage.getItem('ape_custom_logo') || "";
 
     let cart = {}, selectedPayment = 'Espèces', currentCategory = 'all';
     let draggedItemIndex = null;
@@ -397,9 +415,45 @@
       renderCart(); 
       renderSessionSummary();
       renderArchives();
+      renderCatalogList();
+      updateLogoPreview();
       document.getElementById('session-title-input').value = sessionTitle;
       document.getElementById('archive-eventDate').value = new Date().toISOString().slice(0, 10);
     };
+
+    /* --- GESTION DU LOGO --- */
+    function handleLogoUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        customLogo = e.target.result;
+        localStorage.setItem('ape_custom_logo', customLogo);
+        updateLogoPreview();
+        alert("Logo enregistré avec succès !");
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function removeLogo() {
+      customLogo = "";
+      localStorage.removeItem('ape_custom_logo');
+      document.getElementById('logo-file-input').value = "";
+      updateLogoPreview();
+      alert("Logo supprimé.");
+    }
+
+    function updateLogoPreview() {
+      const img = document.getElementById('logo-preview-img');
+      const container = document.getElementById('logo-preview-container');
+      if (customLogo) {
+        img.src = customLogo;
+        container.style.display = 'flex';
+      } else {
+        img.src = '';
+        container.style.display = 'none';
+      }
+    }
 
     /* --- GESTION DU PAVÉ NUMÉRIQUE FLOTTANT --- */
     function openNumpad() {
@@ -420,6 +474,9 @@
         val = val.slice(0, -1);
       } else if (key === '.') {
         if (!val.includes('.')) val = val === '' ? '0.' : val + '.';
+      } else if (key === 'ENTER') {
+        closeNumpad();
+        return;
       } else {
         if (val.includes('.')) {
           const parts = val.split('.');
@@ -448,6 +505,7 @@
       document.getElementById(`nav-${t}`).classList.add('active');
       if (t === 'stats') renderSessionSummary();
       if (t === 'archives') renderArchives();
+      if (t === 'catalog') renderCatalogList();
     }
 
     function filterCategory(cat) {
@@ -511,6 +569,46 @@
       });
     }
 
+    function renderCatalogList() {
+      const container = document.getElementById('catalog-list-container');
+      if (!container) return;
+      container.innerHTML = '';
+      products.forEach(p => {
+        container.innerHTML += `
+          <div onclick="editProduct(${p.id})" style="background:#ffffff; border:1px solid #cbd5e1; border-radius:0.5rem; padding:0.5rem 0.75rem; display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
+            <div>
+              <strong style="font-size:0.85rem; color:#1e293b;">${p.name}</strong>
+              <span style="font-size:0.65rem; color:#64748b; margin-left:0.5rem;">(${p.category})</span>
+            </div>
+            <span style="font-weight:800; font-size:0.85rem; color:#4f46e5;">${p.price.toFixed(2)} €</span>
+          </div>
+        `;
+      });
+    }
+
+    function editProduct(id) {
+      const p = products.find(x => x.id === id);
+      if (!p) return;
+      document.getElementById('prod-id').value = p.id;
+      document.getElementById('prod-name').value = p.name;
+      document.getElementById('prod-price').value = p.price;
+      document.getElementById('prod-category').value = p.category;
+      document.getElementById('prod-color').value = p.color;
+      
+      document.getElementById('catalog-form-title').innerText = "Modifier l'article";
+      document.getElementById('prod-submit-btn').innerText = "Mettre à jour";
+      document.getElementById('cancel-edit-btn').classList.remove('hidden');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function resetProductForm() {
+      document.getElementById('prod-id').value = '';
+      document.querySelector('form').reset();
+      document.getElementById('catalog-form-title').innerText = "Gestion du Catalogue";
+      document.getElementById('prod-submit-btn').innerText = "Enregistrer";
+      document.getElementById('cancel-edit-btn').classList.add('hidden');
+    }
+
     function handleProductSubmit(e) {
       e.preventDefault();
       const id = document.getElementById('prod-id').value;
@@ -527,10 +625,10 @@
       }
 
       localStorage.setItem('ape_products', JSON.stringify(products));
-      e.target.reset();
-      document.getElementById('prod-id').value = '';
+      resetProductForm();
       renderPOS();
-      alert('Article enregistré !');
+      renderCatalogList();
+      alert('Article enregistré avec succès !');
     }
 
     function addToCart(id) {
@@ -609,12 +707,13 @@
       }
     }
 
-    // --- POINT 1 & 3 : PAS DE DOUBLE COUPE (SUPPRESSION DES 2 TICKETS VIDES EN TROP) ---
+    /* --- IMPRESSION CENTRÉE AVEC LOGO --- */
     const ESC_INIT = "\x1B\x40";
+    const ESC_ALIGN_CENTER = "\x1B\x61\x01";
+    const ESC_ALIGN_LEFT = "\x1B\x61\x00";
     const ESC_CUT = "\n\n\x1D\x56\x42\x00";
 
     function sendToRawBT(rawCommands) {
-      // On n'ajoute PLUS ESC_CUT ici à la fin, car chaque ticket/coupon contient déjà sa propre coupe !
       const fullPayload = ESC_INIT + rawCommands;
       const bytes = new TextEncoder().encode(fullPayload);
 
@@ -648,6 +747,17 @@
       document.body.removeChild(link);
     }
 
+    function getCenteredHeader(titleText) {
+      let header = ESC_ALIGN_CENTER;
+      header += "================================\n";
+      header += "          ASSOCIATION           \n";
+      header += "             APET               \n";
+      header += "   Parents d'eleves Théodosiens  \n";
+      header += "================================\n";
+      header += `     ${titleText.toUpperCase()}     \n`;
+      return header;
+    }
+
     function printSaleReceipt(sale, mode) {
       const now = new Date(sale.timestamp);
       const dateStr = now.toLocaleDateString('fr-FR');
@@ -656,11 +766,10 @@
       let textRaw = "";
 
       if (mode === 'global' || mode === 'both') {
-        textRaw += "================================\n";
-        textRaw += `     ${sessionTitle.toUpperCase()}     \n`;
-        textRaw += "        TICKET DE CAISSE        \n";
-        textRaw += `    ${dateStr} a ${timeStr}    \n`;
-        textRaw += "================================\n";
+        textRaw += getCenteredHeader("TICKET DE CAISSE");
+        textRaw += ESC_ALIGN_CENTER + `    ${dateStr} a ${timeStr}    \n`;
+        textRaw += "--------------------------------\n";
+        textRaw += ESC_ALIGN_LEFT;
 
         sale.items.forEach(i => {
           let name = i.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").padEnd(18, ' ').substring(0, 18);
@@ -670,24 +779,23 @@
         });
 
         textRaw += "--------------------------------\n";
+        textRaw += ESC_ALIGN_CENTER;
         textRaw += `TOTAL : ${sale.total.toFixed(2)} EUR\n`;
         textRaw += `Paiement : ${sale.paymentMethod.normalize("NFD").replace(/[\u0300-\u036f]/g, "")}\n`;
         textRaw += "================================\n";
         textRaw += "      Merci de votre visite!    \n";
-        textRaw += ESC_CUT; // 1 seule coupe pour le ticket récap
+        textRaw += ESC_CUT;
       }
 
       if (mode === 'coupons' || mode === 'both') {
         sale.items.forEach(i => {
           let cleanName = i.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
           for (let c = 0; c < i.qty; c++) {
-            textRaw += "--------------------------------\n";
-            textRaw += `     ${sessionTitle.toUpperCase()}     \n`;
-            textRaw += "        COUPON DETACHABLE       \n";
-            textRaw += `       >> ${cleanName} <<       \n`;
+            textRaw += getCenteredHeader("COUPON DETACHABLE");
+            textRaw += ESC_ALIGN_CENTER + `       >> ${cleanName} <<       \n`;
             textRaw += `    ${dateStr} - ${timeStr}     \n`;
             textRaw += "--------------------------------\n";
-            textRaw += ESC_CUT; // 1 seule coupe après chaque coupon
+            textRaw += ESC_CUT;
           }
         });
       }
@@ -787,11 +895,10 @@
         });
       });
 
-      let textRaw = "================================\n";
-      textRaw += `     ${sessionTitle.toUpperCase()}     \n`;
-      textRaw += "        BILAN DE SESSION        \n";
-      textRaw += `      ${new Date().toLocaleDateString('fr-FR')}      \n`;
-      textRaw += "================================\n";
+      let textRaw = getCenteredHeader("BILAN DE SESSION");
+      textRaw += ESC_ALIGN_CENTER + `      ${new Date().toLocaleDateString('fr-FR')}      \n`;
+      textRaw += "--------------------------------\n";
+      textRaw += ESC_ALIGN_LEFT;
 
       Object.entries(itemStats).forEach(([name, data]) => {
         let n = name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").padEnd(18, ' ').substring(0, 18);
@@ -801,6 +908,7 @@
       });
 
       textRaw += "--------------------------------\n";
+      textRaw += ESC_ALIGN_CENTER;
       textRaw += `TOTAL VENTES : ${totalEuros.toFixed(2)} EUR\n`;
       textRaw += `Total articles : ${totalQty}\n`;
       textRaw += `Transactions : ${sales.length}\n`;
@@ -853,7 +961,6 @@
       alert('Session archivée et caisse réinitialisée avec succès !');
     }
 
-    /* --- POINT 2 : SUPPRESSION D'ARCHIVE AVEC CODE CACHÉ (••••) --- */
     function deleteArchive(id) {
       pendingDeleteArchiveId = id;
       const pinInput = document.getElementById('delete-pin-input');
