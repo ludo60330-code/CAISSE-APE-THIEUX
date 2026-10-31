@@ -79,20 +79,22 @@
     .pay-btn { padding: 0.5rem; border-radius: 0.75rem; font-size: 0.75rem; font-weight: 700; border: 2px solid #e2e8f0; background-color: #ffffff; color: #475569; width: 100%; text-align: center; }
     .pay-btn.active { border-color: #4f46e5; background-color: #eef2ff; color: #4338ca; }
 
-    /* Cart & Drawer */
-    #cart-drawer { position: fixed; bottom: 0; left: 0; right: 0; z-index: 40; background: #ffffff; border-top-left-radius: 1rem; border-top-right-radius: 1rem; box-shadow: 0 -4px 12px rgba(0,0,0,0.15); }
-    
-    /* Mode Paysage & Tablette/PC : Panier fixe à droite */
-    @media (min-width: 768px), (orientation: landscape) {
-      #tab-pos { flex-direction: row !important; align-items: stretch; }
+    /* PANIER TOUJOURS OUVERT ET VISIBLE */
+    #cart-drawer { position: relative !important; width: 100% !important; border-radius: 1rem !important; display: flex !important; flex-direction: column !important; box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important; }
+    #cart-content { display: flex !important; flex: 1 !important; max-height: none !important; border-bottom-left-radius: 1rem; border-bottom-right-radius: 1rem; justify-content: space-between; }
+    #cart-list { flex: 1 !important; max-height: 8rem !important; }
+
+    /* Mode Paysage / Tablette : Panier à droite */
+    @media (min-width: 600px), (orientation: landscape) {
+      #tab-pos { flex-direction: row !important; }
       #pos-products-area { padding-bottom: 0.5rem !important; }
-      #cart-drawer { position: relative; width: 22rem; flex-shrink: 0; border-radius: 1rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05); display: flex; flex-direction: column; height: 100%; }
-      #cart-content { display: flex !important; flex: 1; max-height: none !important; border-bottom-left-radius: 1rem; border-bottom-right-radius: 1rem; justify-content: space-between; }
-      #cart-list { flex: 1; max-height: none !important; }
-      #pos-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      #cart-drawer { width: 24rem !important; flex-shrink: 0; height: 100% !important; }
+      #cart-content { max-height: none !important; }
+      #cart-list { max-height: none !important; }
+      #pos-grid { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
     }
     @media (min-width: 1024px) {
-      #pos-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      #pos-grid { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
     }
 
     .no-print { display: block; }
@@ -137,26 +139,26 @@
             <button onclick="filterCategory('Divers')" class="cat-btn">🎈 Divers</button>
           </div>
         </div>
-        <div id="pos-products-area" class="flex-1 p-2 overflow-y-auto" style="padding-bottom: 7rem;">
+        <div id="pos-products-area" class="flex-1 p-2 overflow-y-auto" style="padding-bottom: 2rem;">
           <div id="pos-grid" class="grid grid-cols-2 gap-2"></div>
         </div>
       </div>
 
       <!-- Panier -->
       <div id="cart-drawer" class="card">
-        <div onclick="toggleMobileCart()" class="p-3 flex justify-between items-center" style="background-color:#1e293b; color:#ffffff; border-top-left-radius:1rem; border-top-right-radius:1rem; cursor:pointer;">
+        <div class="p-3 flex justify-between items-center" style="background-color:#1e293b; color:#ffffff; border-top-left-radius:1rem; border-top-right-radius:1rem;">
           <div class="flex items-center gap-2">
             <span>🛒</span>
             <h2 style="font-size:0.875rem; font-weight:700;">Commande</h2>
             <span id="mobile-badge" style="background-color:#4f46e5; color:#ffffff; font-size:0.65rem; font-weight:800; padding:0.1rem 0.4rem; border-radius:9999px;">0</span>
           </div>
-          <div class="flex items-center gap-2" onclick="event.stopPropagation()">
+          <div class="flex items-center gap-2">
             <button onclick="clearCart()" style="font-size:0.75rem; color:#fca5a5; background:rgba(153,27,27,0.4); padding:0.25rem 0.5rem; border-radius:0.25rem; font-weight:600;">Vider</button>
           </div>
         </div>
 
-        <div id="cart-content" class="hidden flex-col p-3" style="background-color:#f8fafc; gap:0.5rem; max-height:60vh; overflow-y:auto;">
-          <div id="cart-list" class="flex flex-col gap-1 overflow-y-auto" style="max-height:8rem; border-bottom:1px solid #e2e8f0; padding-bottom:0.5rem;"></div>
+        <div id="cart-content" class="flex flex-col p-3" style="background-color:#f8fafc; gap:0.5rem;">
+          <div id="cart-list" class="flex flex-col gap-1 overflow-y-auto" style="border-bottom:1px solid #e2e8f0; padding-bottom:0.5rem;"></div>
           
           <div class="flex justify-between items-baseline">
             <span style="font-weight:800; font-size:0.875rem;">TOTAL :</span>
@@ -319,7 +321,6 @@
 
     let cart = {}, selectedPayment = 'Espèces', currentCategory = 'all';
     let draggedItemIndex = null;
-    let isMobileCartOpen = false;
 
     window.onload = function() { 
       renderPOS(); 
@@ -329,20 +330,6 @@
       document.getElementById('session-title-input').value = sessionTitle;
       document.getElementById('archive-eventDate').value = new Date().toISOString().slice(0, 10);
     };
-
-    function toggleMobileCart() {
-      if (window.innerWidth >= 768 || window.matchMedia("(orientation: landscape)").matches) return;
-      isMobileCartOpen = !isMobileCartOpen;
-      const content = document.getElementById('cart-content');
-      
-      if (isMobileCartOpen) {
-        content.classList.remove('hidden');
-        content.classList.add('flex');
-      } else {
-        content.classList.add('hidden');
-        content.classList.remove('flex');
-      }
-    }
 
     function updateSessionTitle(val) {
       sessionTitle = val.trim() || "Ventes de la journée";
@@ -517,12 +504,12 @@
       }
     }
 
-    // --- ENVOI DIRECT RAWBT EN BASE64 ---
+    // --- ENVOI DIRECT RAWBT AVEC COMMANDE DE COUPE EPSON ---
     const ESC_INIT = "\x1B\x40";
-    const ESC_CUT = "\n\n\n\x1D\x56\x41\x03"; // Avance papier + coupe partielle Epson
+    const ESC_CUT = "\n\n\x1D\x56\x42\x00";
 
     function sendToRawBT(rawCommands) {
-      const fullPayload = ESC_INIT + rawCommands;
+      const fullPayload = ESC_INIT + rawCommands + ESC_CUT;
       const bytes = new TextEncoder().encode(fullPayload);
       let binary = "";
       for (let i = 0; i < bytes.byteLength; i++) {
@@ -563,10 +550,11 @@
         textRaw += `Paiement : ${sale.paymentMethod.normalize("NFD").replace(/[\u0300-\u036f]/g, "")}\n`;
         textRaw += "================================\n";
         textRaw += "      Merci de votre visite!    \n";
-        textRaw += ESC_CUT; // Coupe après le ticket récapitulatif
       }
 
       if (mode === 'coupons' || mode === 'both') {
+        if (mode === 'both') textRaw += ESC_CUT;
+
         sale.items.forEach(i => {
           let cleanName = i.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
           for (let c = 0; c < i.qty; c++) {
@@ -576,9 +564,11 @@
             textRaw += `       >> ${cleanName} <<       \n`;
             textRaw += `    ${dateStr} - ${timeStr}     \n`;
             textRaw += "--------------------------------\n";
-            textRaw += ESC_CUT; // Coupe entre chaque coupon individuel
+            textRaw += ESC_CUT;
           }
         });
+      } else {
+        textRaw += ESC_CUT;
       }
 
       finishCheckout();
@@ -590,9 +580,6 @@
     function finishCheckout() {
       clearCart();
       renderSessionSummary();
-      if (window.innerWidth < 768 && !window.matchMedia("(orientation: landscape)").matches && isMobileCartOpen) {
-        toggleMobileCart();
-      }
     }
 
     function renderSessionSummary() {
@@ -699,7 +686,6 @@
       textRaw += `Total articles : ${totalQty}\n`;
       textRaw += `Transactions : ${sales.length}\n`;
       textRaw += "================================\n";
-      textRaw += ESC_CUT;
 
       sendToRawBT(textRaw);
     }
