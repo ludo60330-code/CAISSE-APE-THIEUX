@@ -79,7 +79,7 @@
     .pay-btn { padding: 0.5rem; border-radius: 0.75rem; font-size: 0.75rem; font-weight: 700; border: 2px solid #e2e8f0; background-color: #ffffff; color: #475569; width: 100%; text-align: center; }
     .pay-btn.active { border-color: #4f46e5; background-color: #eef2ff; color: #4338ca; }
 
-    /* --- POINT 1 : PANIER TOUJOURS OUVERT SUR MOBILE ET FIXE À DROITE EN MODE PAYSAGE --- */
+    /* POINT 1 : PANIER TOUJOURS OUVERT ET FIXÉ À DROITE EN MODE PAYSAGE */
     #cart-drawer { position: relative !important; width: 100% !important; border-radius: 1rem !important; display: flex !important; flex-direction: column !important; box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important; }
     #cart-content { display: flex !important; flex: 1 !important; max-height: none !important; border-bottom-left-radius: 1rem; border-bottom-right-radius: 1rem; justify-content: space-between; }
     #cart-list { flex: 1 !important; max-height: 10rem !important; }
@@ -502,7 +502,7 @@
       }
     }
 
-    // --- POINT 2 : ENVOI DIRECT RAWBT AVEC COUPE ENTRE CHAQUE COUPON (ESC/POS) ---
+    // --- POINT 2 & 3 : IMPRESSION DIRECTE RAWBT SANS POP-UP + COUPE ENTRE CHAQUE COUPON ---
     const ESC_INIT = "\x1B\x40";
     const ESC_CUT = "\n\n\x1D\x56\x42\x00";
 
@@ -548,7 +548,7 @@
         textRaw += `Paiement : ${sale.paymentMethod.normalize("NFD").replace(/[\u0300-\u036f]/g, "")}\n`;
         textRaw += "================================\n";
         textRaw += "      Merci de votre visite!    \n";
-        textRaw += ESC_CUT; // Coupe après le ticket récapitulatif
+        textRaw += ESC_CUT;
       }
 
       if (mode === 'coupons' || mode === 'both') {
