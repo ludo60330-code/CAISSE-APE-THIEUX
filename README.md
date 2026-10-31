@@ -79,17 +79,15 @@
     .pay-btn { padding: 0.5rem; border-radius: 0.75rem; font-size: 0.75rem; font-weight: 700; border: 2px solid #e2e8f0; background-color: #ffffff; color: #475569; width: 100%; text-align: center; }
     .pay-btn.active { border-color: #4f46e5; background-color: #eef2ff; color: #4338ca; }
 
-    /* PANIER TOUJOURS OUVERT ET VISIBLE */
+    /* --- POINT 1 : PANIER TOUJOURS OUVERT SUR MOBILE ET FIXE À DROITE EN MODE PAYSAGE --- */
     #cart-drawer { position: relative !important; width: 100% !important; border-radius: 1rem !important; display: flex !important; flex-direction: column !important; box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important; }
     #cart-content { display: flex !important; flex: 1 !important; max-height: none !important; border-bottom-left-radius: 1rem; border-bottom-right-radius: 1rem; justify-content: space-between; }
-    #cart-list { flex: 1 !important; max-height: 8rem !important; }
+    #cart-list { flex: 1 !important; max-height: 10rem !important; }
 
-    /* Mode Paysage / Tablette : Panier à droite */
     @media (min-width: 600px), (orientation: landscape) {
       #tab-pos { flex-direction: row !important; }
       #pos-products-area { padding-bottom: 0.5rem !important; }
       #cart-drawer { width: 24rem !important; flex-shrink: 0; height: 100% !important; }
-      #cart-content { max-height: none !important; }
       #cart-list { max-height: none !important; }
       #pos-grid { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
     }
@@ -504,7 +502,7 @@
       }
     }
 
-    // --- ENVOI DIRECT RAWBT AVEC COMMANDE DE COUPE EPSON ---
+    // --- POINT 2 : ENVOI DIRECT RAWBT AVEC COUPE ENTRE CHAQUE COUPON (ESC/POS) ---
     const ESC_INIT = "\x1B\x40";
     const ESC_CUT = "\n\n\x1D\x56\x42\x00";
 
@@ -550,11 +548,10 @@
         textRaw += `Paiement : ${sale.paymentMethod.normalize("NFD").replace(/[\u0300-\u036f]/g, "")}\n`;
         textRaw += "================================\n";
         textRaw += "      Merci de votre visite!    \n";
+        textRaw += ESC_CUT; // Coupe après le ticket récapitulatif
       }
 
       if (mode === 'coupons' || mode === 'both') {
-        if (mode === 'both') textRaw += ESC_CUT;
-
         sale.items.forEach(i => {
           let cleanName = i.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
           for (let c = 0; c < i.qty; c++) {
@@ -564,10 +561,10 @@
             textRaw += `       >> ${cleanName} <<       \n`;
             textRaw += `    ${dateStr} - ${timeStr}     \n`;
             textRaw += "--------------------------------\n";
-            textRaw += ESC_CUT;
+            textRaw += ESC_CUT; // Coupe automatique entre chaque coupon individuel
           }
         });
-      } else {
+      } else if (mode === 'global') {
         textRaw += ESC_CUT;
       }
 
