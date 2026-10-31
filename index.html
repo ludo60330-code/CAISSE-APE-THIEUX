@@ -297,46 +297,75 @@
       </div>
     </section>
 
-    <!-- Onglet Catalogue -->
-    <section id="tab-catalog" class="hidden flex flex-col gap-3 overflow-y-auto">
-      <div class="card p-4 flex flex-col gap-3">
-        <!-- Option Logo Application -->
-        <div style="background:#f8fafc; padding:0.75rem; border-radius:0.75rem; border:1px solid #e2e8f0; display:flex; flex-direction:column; gap:0.5rem; margin-bottom:0.5rem;">
-          <h3 style="font-size:0.875rem; font-weight:800;">🖼 Logo de l'Association (Tickets & Appli)</h3>
+    <!-- Onglet Catalogue Optimisé -->
+    <section id="tab-catalog" class="hidden flex flex-col gap-3 overflow-y-auto" style="padding-bottom: 2rem;">
+      <div class="card p-4 flex flex-col gap-3" style="background:#ffffff; border-radius:1rem;">
+        
+        <!-- En-tête de section -->
+        <div class="flex justify-between items-center" style="border-bottom:2px solid #f1f5f9; padding-bottom:0.5rem;">
+          <h2 id="catalog-form-title" style="font-size:1rem; font-weight:800; color:#312e81;">➕ Ajouter / Modifier un article</h2>
+          <button id="cancel-edit-btn" onclick="resetProductForm()" class="hidden" style="font-size:0.7rem; color:#dc2626; font-weight:700; background:#fee2e2; padding:0.2rem 0.5rem; border-radius:0.35rem;">✕ Annuler</button>
+        </div>
+
+        <!-- Formulaire intuitif et aéré -->
+        <form onsubmit="handleProductSubmit(event)" class="flex flex-col gap-2-5" style="background:#f8fafc; padding:0.85rem; border-radius:0.75rem; border:1px solid #e2e8f0;">
+          <input type="hidden" id="prod-id">
+          
+          <div class="grid grid-cols-2 gap-2">
+            <div class="flex flex-col gap-1">
+              <label style="font-size:0.65rem; font-weight:700; color:#64748b; text-transform:uppercase;">Nom de l'article</label>
+              <input type="text" id="prod-name" required placeholder="Ex: Crêpe Chocolat" style="padding:0.5rem; border:1px solid #cbd5e1; border-radius:0.5rem; font-size:0.85rem; font-weight:600; background:#fff;">
+            </div>
+            <div class="flex flex-col gap-1">
+              <label style="font-size:0.65rem; font-weight:700; color:#64748b; text-transform:uppercase;">Prix (€)</label>
+              <input type="number" id="prod-price" step="0.1" required placeholder="0.00" style="padding:0.5rem; border:1px solid #cbd5e1; border-radius:0.5rem; font-size:0.85rem; font-weight:600; background:#fff;">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div class="flex flex-col gap-1">
+              <label style="font-size:0.65rem; font-weight:700; color:#64748b; text-transform:uppercase;">Catégorie</label>
+              <select id="prod-category" style="padding:0.5rem; border:1px solid #cbd5e1; border-radius:0.5rem; font-size:0.85rem; font-weight:600; background:#fff;">
+                <option value="Restauration">🍕 Restauration</option>
+                <option value="Buvette">🥤 Buvette</option>
+                <option value="Tickets">🎟 Tickets</option>
+                <option value="Divers">🎈 Divers</option>
+              </select>
+            </div>
+            <div class="flex flex-col gap-1">
+              <label style="font-size:0.65rem; font-weight:700; color:#64748b; text-transform:uppercase;">Couleur du bouton</label>
+              <select id="prod-color" style="padding:0.5rem; border:1px solid #cbd5e1; border-radius:0.5rem; font-size:0.85rem; font-weight:600; background:#fff;">
+                <option value="amber">🟧 Amber / Doré</option>
+                <option value="sky">🟦 Ciel / Bleu</option>
+                <option value="emerald">🟩 Émeraude / Vert</option>
+                <option value="purple">🟪 Violet</option>
+                <option value="rose">🟥 Rose / Rouge</option>
+              </select>
+            </div>
+          </div>
+
+          <button type="submit" id="prod-submit-btn" class="btn-indigo py-2.5 mt-1" style="font-size:0.85rem;">Enregistrer l'article</button>
+        </form>
+
+        <!-- Gestionnaire Logo Association -->
+        <div style="background:#f8fafc; padding:0.75rem; border-radius:0.75rem; border:1px solid #e2e8f0; display:flex; flex-direction:column; gap:0.5rem; margin-top:0.25rem;">
+          <h3 style="font-size:0.8rem; font-weight:800; color:#312e81;">🖼 Logo de l'Association (Tickets & Appli)</h3>
           <input type="file" id="logo-file-input" accept="image/*" onchange="handleLogoUpload(event)" style="font-size:0.75rem;">
-          <div id="logo-preview-container" class="flex items-center gap-2">
-            <span style="font-size:0.75rem; color:#64748b;">Logo actuel :</span>
-            <img id="logo-preview-img" src="" alt="Aucun logo" style="height:2rem; max-width:6rem; object-fit:contain; border:1px solid #cbd5e1; border-radius:0.25rem; background:#fff;">
-            <button onclick="removeLogo()" style="font-size:0.75rem; color:#dc2626; font-weight:700;">Supprimer</button>
+          <div id="logo-preview-container" class="flex items-center justify-between" style="display:none;">
+            <div class="flex items-center gap-2">
+              <span style="font-size:0.7rem; color:#64748b;">Logo actuel :</span>
+              <img id="logo-preview-img" src="" alt="Aperçu logo" style="height:2rem; max-width:5rem; object-fit:contain; border:1px solid #cbd5e1; border-radius:0.25rem; background:#fff;">
+            </div>
+            <button onclick="removeLogo()" class="btn-rose px-2 py-1" style="font-size:0.65rem;">Supprimer le logo</button>
           </div>
         </div>
 
-        <div class="flex justify-between items-center">
-          <h2 id="catalog-form-title" style="font-size:1.125rem; font-weight:800;">Gestion du Catalogue</h2>
-          <button id="cancel-edit-btn" onclick="resetProductForm()" class="hidden" style="font-size:0.75rem; color:#dc2626; font-weight:700;">✕ Annuler modification</button>
+        <!-- Liste des articles enregistrés (avec défilement fluide) -->
+        <div style="margin-top:0.5rem;">
+          <h3 style="font-size:0.85rem; font-weight:800; color:#1e293b; margin-bottom:0.5rem;">📋 Articles enregistrés <span style="font-size:0.65rem; font-weight:600; color:#64748b;">(Cliquez sur un article pour le modifier)</span></h3>
+          <div id="catalog-list-container" class="flex flex-col gap-2 overflow-y-auto" style="max-height: 14rem; padding-right: 0.25rem;"></div>
         </div>
-        <form onsubmit="handleProductSubmit(event)" class="flex flex-col gap-2" style="background:#f8fafc; padding:0.75rem; border-radius:0.75rem; border:1px solid #e2e8f0;">
-          <input type="hidden" id="prod-id">
-          <input type="text" id="prod-name" required placeholder="Nom article" style="padding:0.5rem; border:1px solid #cbd5e1; border-radius:0.375rem; font-size:0.875rem;">
-          <input type="number" id="prod-price" step="0.1" required placeholder="Prix €" style="padding:0.5rem; border:1px solid #cbd5e1; border-radius:0.375rem; font-size:0.875rem;">
-          <select id="prod-category" style="padding:0.5rem; border:1px solid #cbd5e1; border-radius:0.375rem; font-size:0.875rem;">
-            <option value="Restauration">🍕 Restauration</option>
-            <option value="Buvette">🥤 Buvette</option>
-            <option value="Tickets">🎟 Tickets</option>
-            <option value="Divers">🎈 Divers</option>
-          </select>
-          <select id="prod-color" style="padding:0.5rem; border:1px solid #cbd5e1; border-radius:0.375rem; font-size:0.875rem; font-weight:600;">
-            <option value="amber">🟧 Amber / Doré</option>
-            <option value="sky">🟦 Ciel / Bleu</option>
-            <option value="emerald">🟩 Émeraude / Vert</option>
-            <option value="purple">🟪 Violet</option>
-            <option value="rose">🟥 Rose / Rouge</option>
-          </select>
-          <button type="submit" id="prod-submit-btn" class="btn-indigo py-2">Enregistrer</button>
-        </form>
 
-        <h3 style="font-size:0.875rem; font-weight:800; margin-top:0.5rem;">Liste des articles (Cliquez pour modifier)</h3>
-        <div id="catalog-list-container" class="flex flex-col gap-2 overflow-y-auto" style="max-height: 16rem; padding-right: 0.25rem;"></div>
       </div>
     </section>
 
@@ -605,8 +634,8 @@
       document.getElementById('prod-category').value = p.category;
       document.getElementById('prod-color').value = p.color;
       
-      document.getElementById('catalog-form-title').innerText = "Modifier l'article";
-      document.getElementById('prod-submit-btn').innerText = "Mettre à jour";
+      document.getElementById('catalog-form-title').innerText = "✏️ Modifier l'article";
+      document.getElementById('prod-submit-btn').innerText = "Mettre à jour l'article";
       document.getElementById('cancel-edit-btn').classList.remove('hidden');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -614,8 +643,8 @@
     function resetProductForm() {
       document.getElementById('prod-id').value = '';
       document.querySelector('form').reset();
-      document.getElementById('catalog-form-title').innerText = "Gestion du Catalogue";
-      document.getElementById('prod-submit-btn').innerText = "Enregistrer";
+      document.getElementById('catalog-form-title').innerText = "➕ Ajouter / Modifier un article";
+      document.getElementById('prod-submit-btn').innerText = "Enregistrer l'article";
       document.getElementById('cancel-edit-btn').classList.add('hidden');
     }
 
