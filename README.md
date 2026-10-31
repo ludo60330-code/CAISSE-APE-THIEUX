@@ -81,9 +81,18 @@
 
     /* Cart & Drawer */
     #cart-drawer { position: fixed; bottom: 0; left: 0; right: 0; z-index: 40; background: #ffffff; border-top-left-radius: 1rem; border-top-right-radius: 1rem; box-shadow: 0 -4px 12px rgba(0,0,0,0.15); }
+    
+    /* Mode Paysage & Tablette/PC : Panier fixe à droite */
+    @media (min-width: 768px), (orientation: landscape) {
+      #tab-pos { flex-direction: row !important; align-items: stretch; }
+      #pos-products-area { padding-bottom: 0.5rem !important; }
+      #cart-drawer { position: relative; width: 22rem; flex-shrink: 0; border-radius: 1rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05); display: flex; flex-direction: column; height: 100%; }
+      #cart-content { display: flex !important; flex: 1; max-height: none !important; border-bottom-left-radius: 1rem; border-bottom-right-radius: 1rem; justify-content: space-between; }
+      #cart-list { flex: 1; max-height: none !important; }
+      #pos-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
     @media (min-width: 1024px) {
-      #cart-drawer { position: relative; border-radius: 1rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-      .grid-cols-2 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      #pos-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     }
 
     .no-print { display: block; }
@@ -128,7 +137,7 @@
             <button onclick="filterCategory('Divers')" class="cat-btn">🎈 Divers</button>
           </div>
         </div>
-        <div class="flex-1 p-2 overflow-y-auto" style="padding-bottom: 7rem;">
+        <div id="pos-products-area" class="flex-1 p-2 overflow-y-auto" style="padding-bottom: 7rem;">
           <div id="pos-grid" class="grid grid-cols-2 gap-2"></div>
         </div>
       </div>
@@ -322,7 +331,7 @@
     };
 
     function toggleMobileCart() {
-      if (window.innerWidth >= 1024) return;
+      if (window.innerWidth >= 768 || window.matchMedia("(orientation: landscape)").matches) return;
       isMobileCartOpen = !isMobileCartOpen;
       const content = document.getElementById('cart-content');
       
@@ -508,21 +517,19 @@
       }
     }
 
-    // --- ENVOI DIRECT RAWBT EN BASE64 (SANS PLAY STORE NI BLOCAGE) ---
-    function sendToRawBT(text) {
-      // Encodage propre en UTF-8 puis Base64 avec commandes ESC/POS d'initialisation et de coupe
-      const escInit = "\x1B\x40"; // Initialise l'imprimante
-      const escCut = "\n\n\n\x1D\x56\x41\x03"; // Avance le papier et coupe
-      const fullText = escInit + text + escCut;
+    // --- ENVOI DIRECT RAWBT EN BASE64 ---
+    const ESC_INIT = "\x1B\x40";
+    const ESC_CUT = "\n\n\n\x1D\x56\x41\x03"; // Avance papier + coupe partielle Epson
 
-      const bytes = new TextEncoder().encode(fullText);
+    function sendToRawBT(rawCommands) {
+      const fullPayload = ESC_INIT + rawCommands;
+      const bytes = new TextEncoder().encode(fullPayload);
       let binary = "";
       for (let i = 0; i < bytes.byteLength; i++) {
         binary += String.fromCharCode(bytes[i]);
       }
       const base64Data = window.btoa(binary);
 
-      // Appel direct du schéma rawbt:base64 (ne redirige jamais vers Google Play)
       const link = document.createElement('a');
       link.href = "rawbt:base64," + base64Data;
       document.body.appendChild(link);
@@ -555,7 +562,8 @@
         textRaw += `TOTAL : ${sale.total.toFixed(2)} EUR\n`;
         textRaw += `Paiement : ${sale.paymentMethod.normalize("NFD").replace(/[\u0300-\u036f]/g, "")}\n`;
         textRaw += "================================\n";
-        textRaw += "      Merci de votre visite!    \n\n";
+        textRaw += "      Merci de votre visite!    \n";
+        textRaw += ESC_CUT; // Coupe après le ticket récapitulatif
       }
 
       if (mode === 'coupons' || mode === 'both') {
@@ -567,7 +575,8 @@
             textRaw += "        COUPON DETACHABLE       \n";
             textRaw += `       >> ${cleanName} <<       \n`;
             textRaw += `    ${dateStr} - ${timeStr}     \n`;
-            textRaw += "--------------------------------\n\n";
+            textRaw += "--------------------------------\n";
+            textRaw += ESC_CUT; // Coupe entre chaque coupon individuel
           }
         });
       }
@@ -581,7 +590,9 @@
     function finishCheckout() {
       clearCart();
       renderSessionSummary();
-      if (window.innerWidth < 1024 && isMobileCartOpen) toggleMobileCart();
+      if (window.innerWidth < 768 && !window.matchMedia("(orientation: landscape)").matches && isMobileCartOpen) {
+        toggleMobileCart();
+      }
     }
 
     function renderSessionSummary() {
@@ -688,6 +699,7 @@
       textRaw += `Total articles : ${totalQty}\n`;
       textRaw += `Transactions : ${sales.length}\n`;
       textRaw += "================================\n";
+      textRaw += ESC_CUT;
 
       sendToRawBT(textRaw);
     }
