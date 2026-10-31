@@ -139,7 +139,8 @@
   <header class="no-print">
     <div class="max-w-7xl p-3 flex justify-between items-center">
       <div class="flex items-center gap-2">
-        <span style="font-size:1.5rem;">🌳</span>
+        <img id="header-logo-img" src="" alt="Logo" class="hidden" style="height:2.2rem; width:2.2rem; object-fit:contain; border-radius:0.35rem; background:#fff; padding:0.1rem;">
+        <span id="header-logo-fallback" style="font-size:1.5rem;">🌳</span>
         <div>
           <h1 style="font-size:1.125rem; font-weight:800; line-height:1.2;">APET Caisse</h1>
           <span style="font-size:0.65rem; color:#c7d2fe;">Parents d'élèves des Théodosiens</span>
@@ -446,12 +447,21 @@
     function updateLogoPreview() {
       const img = document.getElementById('logo-preview-img');
       const container = document.getElementById('logo-preview-container');
+      const headerImg = document.getElementById('header-logo-img');
+      const headerFallback = document.getElementById('header-logo-fallback');
+
       if (customLogo) {
         img.src = customLogo;
         container.style.display = 'flex';
+        headerImg.src = customLogo;
+        headerImg.classList.remove('hidden');
+        headerFallback.classList.add('hidden');
       } else {
         img.src = '';
         container.style.display = 'none';
+        headerImg.src = '';
+        headerImg.classList.add('hidden');
+        headerFallback.classList.remove('hidden');
       }
     }
 
